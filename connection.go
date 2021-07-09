@@ -23,9 +23,11 @@ import (
 )
 
 const XID = "XID"
+const LocalXID = "LOCAlXID"
 
 type connCtx struct {
 	xid                string
+	localXid           string
 	branchID           int64
 	lockKeys           []string
 	sqlUndoItemsBuffer []*sqlUndoLog
@@ -602,6 +604,7 @@ func (mc *mysqlConn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver
 		if xid, ok := val.(string); ok {
 			mc.ctx = &connCtx{
 				xid:                xid,
+				localXid: "",
 				lockKeys:           make([]string, 0),
 				sqlUndoItemsBuffer: make([]*sqlUndoLog, 0),
 			}

@@ -329,22 +329,33 @@ func (executor *selectForUpdateExecutor) Execute(lockRetryInterval time.Duration
 	lockKeys := buildLockKey(selectPKRows)
 	if lockKeys == "" {
 		return rows, err
-	} else {
-		if executor.mc.ctx.xid != "" {
-			var lockable bool
-			var err error
-			for i := 0; i < lockRetryTimes; i++ {
-				lockable, err = dataSourceManager.LockQuery(meta.BranchTypeAT,
-					executor.mc.cfg.DBName, executor.mc.ctx.xid, lockKeys)
-				if lockable && err == nil {
-					break
-				}
-				time.Sleep(lockRetryInterval)
+	}
+	if executor.mc.ctx.xid != "" {
+		var lockable bool
+		var err error
+		for i := 0; i < lockRetryTimes; i++ {
+			lockable, err = dataSourceManager.LockQuery(meta.BranchTypeAT,
+				executor.mc.cfg.DBName, executor.mc.ctx.xid, lockKeys)
+			if lockable && err == nil {
+				break
 			}
-			if err != nil {
-				return nil, err
-			}
+			time.Sleep(lockRetryInterval)
 		}
+		if err != nil {
+			return nil, err
+		}
+		return rows, err
+	}
+	if executor.mc.ctx.localXid != "" {
+		//检测是否存在全局锁
+		//lockable, err = dataSourceManager.LockQuery(meta.BranchTypeAT,
+		//	executor.mc.cfg.DBName, executor.mc.ctx.xid, lockKeys)
+		//if lockable && err == nil {
+		//	break
+		//}
+		//全局锁存在，等待释放
+
+		//全局锁不存在，返回
 	}
 	return rows, err
 }
